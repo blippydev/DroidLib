@@ -11,17 +11,11 @@
 
     HOW TO USE IT
     -------------
-    1. Copy this file to Scripts/Developed/<GameName>.lua
-       (files starting with "_" are never served — this one stays a template).
-    2. Register it in Scripts/loader.lua ROUTES:
-           [12345678] = "Developed/<GameName>.lua",   -- game.GameId, NOT PlaceId.
-       One GameId covers a game's lobby + in-game places.
-    3. Do RECON first (spy remotes, find state, note dead ends in §0 below),
+    1. Copy this file, rename it, and fill in the GAME parts (§0).
+    2. Do RECON first (spy remotes, find state, note dead ends in §0 below),
        THEN write features. Recon-first is what stops you redoing work later.
-    4. Run it through the dev server (docs/devmode.md):
-           python server.py 9001
-           _G.DWDevMode = true
-           loadstring(game:HttpGet("http://127.0.0.1:9001/Scripts/loader.lua?t="..tick()))()
+    3. Execute it in-game (executor). The library loads straight from prod:
+       raw.githubusercontent.com/blippydev/DroidLib (main/DWLibV1.lua).
 
     Full widget reference: docs/elements.md (read it alongside this file).
 
@@ -221,28 +215,30 @@ local state = {
 -- ╔══════════════════════════════════════════════════════════════════════╗
 -- ║ §8. UI BOOTSTRAP                                                     ║
 -- ╚══════════════════════════════════════════════════════════════════════╝
--- This script boots its OWN library + window. Run it through loader.lua,
--- which sets Dw_DevMode + DwLibUrl on the shared env — so this file needs
--- no per-game URL edits, in dev or live.
+-- This script boots its OWN library + window. The library loads straight
+-- from GitHub prod; _dwEnv.DwLibUrl (if a host env set it) overrides.
 --
 -- Split loadstring from the call ON PURPOSE: if the fetch 404s, loadstring
 -- gets a non-Lua body and returns nil, and the assert below names the exact
 -- URL. Fused as loadstring(...)(), you'd only get "attempt to call a nil
 -- value" with no idea which fetch failed.
-local DEV_MODE = _dwEnv.Dw_DevMode
-if DEV_MODE == nil then DEV_MODE = true end
 local isMobile = _dwEnv.Dw_IsMobile
 if isMobile == nil then
     isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 end
 
 if _dwEnv.DWLib then pcall(function() _dwEnv.DWLib:Unload() end) end
-local libUrl = _dwEnv.DwLibUrl
-    or (DEV_MODE and ("http://127.0.0.1:9001/DWLIBV1/DWLibV1.lua?t=" .. tick()))
-    or error("[DROIDWARE] no lib URL: set DwLibUrl or enable Dw_DevMode")
-local libSource = game:HttpGet(libUrl)
+-- lib source: loader/env URL > GitHub raw prod. Fetched via pcall so a
+-- network hiccup names the URL in the assert instead of hanging the boot.
+local PROD_URL = "https://raw.githubusercontent.com/blippydev/DroidLib/refs/heads/main/DWLibV1.lua"
+local function fetchLib(url)
+    local ok, body = pcall(game.HttpGet, game, url)
+    if ok and type(body) == "string" and #body > 0 then return body, url end
+    return nil, url
+end
+local libSource, triedUrl = fetchLib(_dwEnv.DwLibUrl or PROD_URL)
 local libChunk = type(libSource) == "string" and loadstring(libSource) or nil
-assert(libChunk, "[DROIDWARE] DWLib did not compile, fetched from " .. tostring(libUrl))
+assert(libChunk, "[DROIDWARE] DWLib did not compile, fetched from " .. tostring(triedUrl))
 Library = libChunk()
 assert(type(Library) == "table", "[DROIDWARE] DWLib failed to load.")
 _dwEnv.DWLib = Library
@@ -254,7 +250,6 @@ end
 local Window = Library:CreateWindow({
     Name = "DROIDWARE",
     SubName = "<Game Name>", -- header subtitle + Home game line fallback.
-    DevMode = DEV_MODE, -- header pill: DEVMODE vs PRODUCTION.
     HomeOptions = {
         subtitle = "#1 Script HUB",
         -- gameName = "<Game Name>", -- omit: Home resolves it via Marketplace.
