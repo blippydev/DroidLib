@@ -28,7 +28,7 @@ function Library:Page(window, data, level, parentTab)
 
     local btn = self:Create("TextButton", {
         Size = isSub and UDim2.new(0, 0, 0, 20) or UDim2.new(0, 90, 0, 22),
-        AutomaticSize = isSub and Enum.AutomaticSize.X or Enum.AutomaticSize.None,
+        AutomaticSize = Enum.AutomaticSize.X,
         AutoButtonColor = false,
         Text = "",
         BorderSizePixel = 0,
@@ -85,7 +85,7 @@ function Library:Page(window, data, level, parentTab)
         end
         nameLbl = self:Create("TextLabel", {
             Position = UDim2.new(0, textX, 0, 0),
-            Size = UDim2.new(0, btnWidth - textX - 4, 1, 0),
+            Size = UDim2.new(1, -(textX + 10), 1, 0),
             BackgroundTransparency = 1,
             Font = Library.FontBold,
             TextSize = 13,

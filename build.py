@@ -1,5 +1,7 @@
 import os
+import subprocess
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(HERE, "src")
@@ -51,7 +53,29 @@ def build(pure=False):
             parts.append(chunk)
         else:
             parts.append(f"{SEPARATOR}\n-- [ module: {name} ]\n{SEPARATOR}\n\n{chunk}")
+    stamp = build_stamp()
+    if pure:
+        parts.append(stamp)
+    else:
+        parts.append(f"{SEPARATOR}\n-- [ module: _BuildInfo (generated) ]\n{SEPARATOR}\n\n{stamp}")
+    # Footer.lua ends the bundle with `return Library`, so anything appended
+    # after it never runs: sink the stamp just BEFORE it.
+    if parts and MODULE_ORDER and MODULE_ORDER[-1] == "Footer.lua":
+        stamp_part = parts.pop()
+        parts.insert(len(parts) - 1, stamp_part)
     return "".join(parts)
+
+def build_stamp():
+    rev = "nogit"
+    try:
+        rev = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=HERE, stderr=subprocess.DEVNULL,
+        ).decode().strip() or "nogit"
+    except Exception:
+        pass
+    when = time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())
+    return f'Library.BuildId = "{rev} {when}"\n'
 
 def main():
     pure = "--pure" in sys.argv
