@@ -29,11 +29,11 @@ function Library:Section(page, data)
         Size = UDim2.new(1, -56, 0, 18),
         Position = UDim2.new(0, 8, 0, 2),
         BackgroundTransparency = 1,
-        Font = Library.Font,
+        Font = Library.FontBold,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
-        Text = tostring(section.Name),
+        Text = string.upper(tostring(section.Name)),
     }, box)
     self:Themed(head, "TextColor3", "Text")
 

@@ -172,6 +172,7 @@ Library.UIScale = 1
 -- widget's text through one face.
 Library.SquareCorners = false
 Library.Font = Enum.Font.Gotham
+Library.FontBold = Enum.Font.GothamBold
 -- Custom outline: SetBorder({ Color = Color3, Transparency = 0..1,
 -- Thickness = 1..6 }) re-tints/re-sizes every chrome stroke; Color = false
 -- reverts to the theme outline. Runtime setting (not config-persisted).

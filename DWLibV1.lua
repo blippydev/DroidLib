@@ -208,6 +208,7 @@ Library.UIScale = 1
 -- widget's text through one face.
 Library.SquareCorners = false
 Library.Font = Enum.Font.Gotham
+Library.FontBold = Enum.Font.GothamBold
 -- Custom outline: SetBorder({ Color = Color3, Transparency = 0..1,
 -- Thickness = 1..6 }) re-tints/re-sizes every chrome stroke; Color = false
 -- reverts to the theme outline. Runtime setting (not config-persisted).
@@ -1205,8 +1206,8 @@ function Library:Window(data)
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 12, 0, 0),
         Size = UDim2.new(1, -260, 0, 30),
-        Font = Library.Font,
-        TextSize = 13,
+        Font = Library.FontBold,
+        TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
         Text = tostring(window.Name),
@@ -1535,6 +1536,27 @@ function Library:Window(data)
         end
     end
 
+    -- Soft drop shadow: a dark plate riding behind the window, synced to
+    -- every move/resize so the window floats above the game.
+    local shadow = self:Create("Frame", {
+        Name = "WindowShadow",
+        BackgroundColor3 = Color3.new(0, 0, 0),
+        BackgroundTransparency = 0.72,
+        BorderSizePixel = 0,
+        ZIndex = 0,
+        Active = false,
+    }, self.Holder)
+    self:Corner(shadow, 14)
+    local function syncShadow()
+        pcall(function()
+            shadow.Position = UDim2.new(root.Position.X.Scale, root.Position.X.Offset - 7, root.Position.Y.Scale, root.Position.Y.Offset + 5)
+            shadow.Size = UDim2.new(root.Size.X.Scale, root.Size.X.Offset + 14, root.Size.Y.Scale, root.Size.Y.Offset + 14)
+        end)
+    end
+    syncShadow()
+    self:Connect(root:GetPropertyChangedSignal("Position"), syncShadow)
+    self:Connect(root:GetPropertyChangedSignal("Size"), syncShadow)
+
     -- Loading card.
     local overlay = self:Create("Frame", {
         Name = "Loading",
@@ -1551,7 +1573,7 @@ function Library:Window(data)
         BorderSizePixel = 0,
     }, overlay)
     self:Themed(lcard, "BackgroundColor3", "Background")
-    self:Corner(lcard, 0)
+    self:Corner(lcard, 10)
     self:Stroke(lcard, 1)
 
     local llogo = self:Create("Frame", {
@@ -1561,7 +1583,7 @@ function Library:Window(data)
         BorderSizePixel = 0,
     }, lcard)
     self:Themed(llogo, "BackgroundColor3", "Element2")
-    self:Corner(llogo, 0)
+    self:Corner(llogo, 16)
     local llogoT = self:Create("TextLabel", {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
@@ -1590,13 +1612,13 @@ function Library:Window(data)
         BorderSizePixel = 0,
         BackgroundColor3 = Color3.fromRGB(35, 35, 42),
     }, lcard)
-    self:Corner(track, 0)
+    self:Corner(track, 2)
     local fill = self:Create("Frame", {
         Size = UDim2.new(0, 50, 1, 0),
         BorderSizePixel = 0,
     }, track)
     self:Themed(fill, "BackgroundColor3", "Accent")
-    self:Corner(fill, 0)
+    self:Corner(fill, 2)
 
     local lstatus = self:Create("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 0),
@@ -1761,7 +1783,7 @@ function Library:Page(window, data, level, parentTab)
             Position = UDim2.new(0, textX, 0, 0),
             Size = UDim2.new(0, btnWidth - textX - 4, 1, 0),
             BackgroundTransparency = 1,
-            Font = Library.Font,
+            Font = Library.FontBold,
             TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTruncate = Enum.TextTruncate.AtEnd,
@@ -2033,11 +2055,11 @@ function Library:Section(page, data)
         Size = UDim2.new(1, -56, 0, 18),
         Position = UDim2.new(0, 8, 0, 2),
         BackgroundTransparency = 1,
-        Font = Library.Font,
+        Font = Library.FontBold,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
-        Text = tostring(section.Name),
+        Text = string.upper(tostring(section.Name)),
     }, box)
     self:Themed(head, "TextColor3", "Text")
 
@@ -2163,6 +2185,10 @@ function Library.Sections:Toggle(data)
     Library:Themed(box, "BackgroundColor3", "Element2")
     Library:Corner(box, 8)
     local boxStroke = Library:Stroke(box, 1)
+    -- Active glow: a soft accent halo that fades in with the ON state.
+    local glowStroke = Library:Stroke(box, 2)
+    Library:Themed(glowStroke, "Color", "Accent")
+    glowStroke.Transparency = 1
     local knob = Library:Create("Frame", {
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 3, 0.5, 0),
@@ -2208,9 +2234,11 @@ function Library.Sections:Toggle(data)
         if state then
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Accent }, t)
             Library:Tween(knob, { Position = UDim2.new(0, 17, 0.5, 0) }, t)
+            Library:Tween(glowStroke, { Transparency = 0.55 }, t)
         else
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Element2 }, t)
             Library:Tween(knob, { Position = UDim2.new(0, 3, 0.5, 0) }, t)
+            Library:Tween(glowStroke, { Transparency = 1 }, t)
         end
     end
     paint(true)
@@ -2457,6 +2485,14 @@ function Library.Sections:Slider(data)
     }, bar)
     Library:Themed(fill, "BackgroundColor3", "Accent")
     Library:Corner(fill, 4)
+    -- Depth on the fill: accent fades into its darker twin toward the tip.
+    Library:Create("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(170, 170, 170)),
+        }),
+        Rotation = 0,
+    }, fill)
     local sheen = Library:Create("Frame", {
         Size = UDim2.new(1, 0, 0.5, 0),
         BorderSizePixel = 0,
@@ -2464,6 +2500,16 @@ function Library.Sections:Slider(data)
         BackgroundTransparency = 0.85,
     }, fill)
     Library:Corner(sheen, 4)
+    -- Drag knob: white dot riding the fill head.
+    local knob = Library:Create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Size = UDim2.new(0, 10, 0, 10),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        ZIndex = 2,
+    }, bar)
+    Library:Corner(knob, 5)
+    Library:Stroke(knob, 1, "Outline")
 
     local slider = {}
     local dragging = false
@@ -2504,8 +2550,10 @@ function Library.Sections:Slider(data)
         value.Text = tostring(val) .. sfx
         if dragging then
             fill.Size = UDim2.new(t, 0, 1, 0)
+            knob.Position = UDim2.new(t, 0, 0.5, 0)
         else
             Library:Tween(fill, { Size = UDim2.new(t, 0, 1, 0) }, 0.1)
+            Library:Tween(knob, { Position = UDim2.new(t, 0, 0.5, 0) }, 0.1)
         end
     end
     paint()
@@ -3734,7 +3782,7 @@ function Library:Notification(title, body, duration)
         ClipsDescendants = true,
     }, self.NotifHolder)
     self:Themed(card, "BackgroundColor3", "Background")
-    self:Corner(card, 0)
+    self:Corner(card, 8)
     self:Stroke(card, 1, "Outline")
 
     -- 2px accent rail down the left edge.
@@ -3748,7 +3796,7 @@ function Library:Notification(title, body, duration)
         Position = UDim2.new(0, 12, 0, 7),
         Size = UDim2.new(1, -66, 0, 14),
         BackgroundTransparency = 1,
-        Font = Library.Font,
+        Font = Library.FontBold,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
@@ -3888,7 +3936,7 @@ function Library:Dialog(data)
         Position = UDim2.new(0, 16, 0, 12),
         Size = UDim2.new(1, -32, 0, 26),
         BackgroundTransparency = 1,
-        Font = Library.Font,
+        Font = Library.FontBold,
         TextSize = 17,
         TextXAlignment = Enum.TextXAlignment.Left,
         Text = tostring(data.Title or "Confirm"),

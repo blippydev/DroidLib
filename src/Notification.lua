@@ -12,7 +12,7 @@ function Library:Notification(title, body, duration)
         ClipsDescendants = true,
     }, self.NotifHolder)
     self:Themed(card, "BackgroundColor3", "Background")
-    self:Corner(card, 0)
+    self:Corner(card, 8)
     self:Stroke(card, 1, "Outline")
 
     -- 2px accent rail down the left edge.
@@ -26,7 +26,7 @@ function Library:Notification(title, body, duration)
         Position = UDim2.new(0, 12, 0, 7),
         Size = UDim2.new(1, -66, 0, 14),
         BackgroundTransparency = 1,
-        Font = Library.Font,
+        Font = Library.FontBold,
         TextSize = 13,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,

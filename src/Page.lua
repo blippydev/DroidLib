@@ -87,7 +87,7 @@ function Library:Page(window, data, level, parentTab)
             Position = UDim2.new(0, textX, 0, 0),
             Size = UDim2.new(0, btnWidth - textX - 4, 1, 0),
             BackgroundTransparency = 1,
-            Font = Library.Font,
+            Font = Library.FontBold,
             TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTruncate = Enum.TextTruncate.AtEnd,

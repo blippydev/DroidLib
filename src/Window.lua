@@ -84,8 +84,8 @@ function Library:Window(data)
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 12, 0, 0),
         Size = UDim2.new(1, -260, 0, 30),
-        Font = Library.Font,
-        TextSize = 13,
+        Font = Library.FontBold,
+        TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left,
         TextTruncate = Enum.TextTruncate.AtEnd,
         Text = tostring(window.Name),
@@ -414,6 +414,27 @@ function Library:Window(data)
         end
     end
 
+    -- Soft drop shadow: a dark plate riding behind the window, synced to
+    -- every move/resize so the window floats above the game.
+    local shadow = self:Create("Frame", {
+        Name = "WindowShadow",
+        BackgroundColor3 = Color3.new(0, 0, 0),
+        BackgroundTransparency = 0.72,
+        BorderSizePixel = 0,
+        ZIndex = 0,
+        Active = false,
+    }, self.Holder)
+    self:Corner(shadow, 14)
+    local function syncShadow()
+        pcall(function()
+            shadow.Position = UDim2.new(root.Position.X.Scale, root.Position.X.Offset - 7, root.Position.Y.Scale, root.Position.Y.Offset + 5)
+            shadow.Size = UDim2.new(root.Size.X.Scale, root.Size.X.Offset + 14, root.Size.Y.Scale, root.Size.Y.Offset + 14)
+        end)
+    end
+    syncShadow()
+    self:Connect(root:GetPropertyChangedSignal("Position"), syncShadow)
+    self:Connect(root:GetPropertyChangedSignal("Size"), syncShadow)
+
     -- Loading card.
     local overlay = self:Create("Frame", {
         Name = "Loading",
@@ -430,7 +451,7 @@ function Library:Window(data)
         BorderSizePixel = 0,
     }, overlay)
     self:Themed(lcard, "BackgroundColor3", "Background")
-    self:Corner(lcard, 0)
+    self:Corner(lcard, 10)
     self:Stroke(lcard, 1)
 
     local llogo = self:Create("Frame", {
@@ -440,7 +461,7 @@ function Library:Window(data)
         BorderSizePixel = 0,
     }, lcard)
     self:Themed(llogo, "BackgroundColor3", "Element2")
-    self:Corner(llogo, 0)
+    self:Corner(llogo, 16)
     local llogoT = self:Create("TextLabel", {
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
@@ -469,13 +490,13 @@ function Library:Window(data)
         BorderSizePixel = 0,
         BackgroundColor3 = Color3.fromRGB(35, 35, 42),
     }, lcard)
-    self:Corner(track, 0)
+    self:Corner(track, 2)
     local fill = self:Create("Frame", {
         Size = UDim2.new(0, 50, 1, 0),
         BorderSizePixel = 0,
     }, track)
     self:Themed(fill, "BackgroundColor3", "Accent")
-    self:Corner(fill, 0)
+    self:Corner(fill, 2)
 
     local lstatus = self:Create("TextLabel", {
         AnchorPoint = Vector2.new(0.5, 0),

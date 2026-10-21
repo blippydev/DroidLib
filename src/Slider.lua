@@ -51,6 +51,14 @@ function Library.Sections:Slider(data)
     }, bar)
     Library:Themed(fill, "BackgroundColor3", "Accent")
     Library:Corner(fill, 4)
+    -- Depth on the fill: accent fades into its darker twin toward the tip.
+    Library:Create("UIGradient", {
+        Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(170, 170, 170)),
+        }),
+        Rotation = 0,
+    }, fill)
     local sheen = Library:Create("Frame", {
         Size = UDim2.new(1, 0, 0.5, 0),
         BorderSizePixel = 0,
@@ -58,6 +66,16 @@ function Library.Sections:Slider(data)
         BackgroundTransparency = 0.85,
     }, fill)
     Library:Corner(sheen, 4)
+    -- Drag knob: white dot riding the fill head.
+    local knob = Library:Create("Frame", {
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Size = UDim2.new(0, 10, 0, 10),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        ZIndex = 2,
+    }, bar)
+    Library:Corner(knob, 5)
+    Library:Stroke(knob, 1, "Outline")
 
     local slider = {}
     local dragging = false
@@ -98,8 +116,10 @@ function Library.Sections:Slider(data)
         value.Text = tostring(val) .. sfx
         if dragging then
             fill.Size = UDim2.new(t, 0, 1, 0)
+            knob.Position = UDim2.new(t, 0, 0.5, 0)
         else
             Library:Tween(fill, { Size = UDim2.new(t, 0, 1, 0) }, 0.1)
+            Library:Tween(knob, { Position = UDim2.new(t, 0, 0.5, 0) }, 0.1)
         end
     end
     paint()

@@ -21,6 +21,10 @@ function Library.Sections:Toggle(data)
     Library:Themed(box, "BackgroundColor3", "Element2")
     Library:Corner(box, 8)
     local boxStroke = Library:Stroke(box, 1)
+    -- Active glow: a soft accent halo that fades in with the ON state.
+    local glowStroke = Library:Stroke(box, 2)
+    Library:Themed(glowStroke, "Color", "Accent")
+    glowStroke.Transparency = 1
     local knob = Library:Create("Frame", {
         AnchorPoint = Vector2.new(0, 0.5),
         Position = UDim2.new(0, 3, 0.5, 0),
@@ -66,9 +70,11 @@ function Library.Sections:Toggle(data)
         if state then
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Accent }, t)
             Library:Tween(knob, { Position = UDim2.new(0, 17, 0.5, 0) }, t)
+            Library:Tween(glowStroke, { Transparency = 0.55 }, t)
         else
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Element2 }, t)
             Library:Tween(knob, { Position = UDim2.new(0, 3, 0.5, 0) }, t)
+            Library:Tween(glowStroke, { Transparency = 1 }, t)
         end
     end
     paint(true)

@@ -22,7 +22,7 @@ function Library:Dialog(data)
         Position = UDim2.new(0, 16, 0, 12),
         Size = UDim2.new(1, -32, 0, 26),
         BackgroundTransparency = 1,
-        Font = Library.Font,
+        Font = Library.FontBold,
         TextSize = 17,
         TextXAlignment = Enum.TextXAlignment.Left,
         Text = tostring(data.Title or "Confirm"),
