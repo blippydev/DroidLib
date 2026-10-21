@@ -1087,12 +1087,14 @@ function Library:EnsureTooltip()
 end
 
 function Library:AttachTooltip(inst, text)
-    if self.TooltipsEnabled == false then return end
     if typeof(inst) ~= "Instance" then return end
     text = tostring(text or "")
     if text == "" then return end
     self:EnsureTooltip()
     self:Connect(inst.MouseEnter, function()
+        -- Checked at show time, not attach time: widgets wire up once at
+        -- build (usually while enabled), so a later toggle-off must gate here.
+        if self.TooltipsEnabled == false then return end
         local card, label = self._tooltip, self._tooltipLabel
         if not card or not card.Parent then return end
         self:BringToFront(card)
@@ -5759,6 +5761,9 @@ function Library:CreateSettingsPage(window)
         Default = true,
         Callback = function(v)
             self.TooltipsEnabled = v and true or false
+            if not v and self._tooltip then
+                self._tooltip.Visible = false
+            end
         end,
     })
     sec:Button({
@@ -6259,7 +6264,7 @@ end
 -- [ module: _BuildInfo (generated) ]
 -- ============================================================
 
-Library.BuildId = "abc2125 2026-10-21 22:29 UTC"
+Library.BuildId = "d20d503 2026-10-21 22:44 UTC"
 -- ============================================================
 -- [ module: Footer.lua ]
 -- ============================================================

@@ -201,6 +201,9 @@ function Library:CreateSettingsPage(window)
         Default = true,
         Callback = function(v)
             self.TooltipsEnabled = v and true or false
+            if not v and self._tooltip then
+                self._tooltip.Visible = false
+            end
         end,
     })
     sec:Button({

@@ -35,12 +35,14 @@ function Library:EnsureTooltip()
 end
 
 function Library:AttachTooltip(inst, text)
-    if self.TooltipsEnabled == false then return end
     if typeof(inst) ~= "Instance" then return end
     text = tostring(text or "")
     if text == "" then return end
     self:EnsureTooltip()
     self:Connect(inst.MouseEnter, function()
+        -- Checked at show time, not attach time: widgets wire up once at
+        -- build (usually while enabled), so a later toggle-off must gate here.
+        if self.TooltipsEnabled == false then return end
         local card, label = self._tooltip, self._tooltipLabel
         if not card or not card.Parent then return end
         self:BringToFront(card)
