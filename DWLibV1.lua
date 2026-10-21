@@ -1711,15 +1711,15 @@ function Library:Page(window, data, level, parentTab)
     local idx = #window.Pages + 1
     local isSub = page.Level == 2
 
-    -- Mono Code font: fixed advance per char. Measure with TextService when
-    -- games allow it; fall back to the documented 8px advance at size 13.
+    -- Measured in the live tab font (GothamBold): measuring in mono Code
+    -- undershoots bold advances and truncates names ("Ho...").
     local function labelTextWidth(text)
         local ok, size = pcall(function()
             local ts = game:GetService("TextService")
-            return ts:GetTextSize(tostring(text), 13, Enum.Font.Code, Vector2.new(10000, 100)).X
+            return ts:GetTextSize(tostring(text), 13, Library.FontBold, Vector2.new(10000, 100)).X
         end)
         if ok and type(size) == "number" and size > 0 then return size end
-        return #tostring(text) * 8
+        return #tostring(text) * 9
     end
 
     local btn = self:Create("TextButton", {
@@ -1766,7 +1766,7 @@ function Library:Page(window, data, level, parentTab)
         tabStroke = self:Stroke(btn, 1, "OutlineSoft")
         local iconImg = self:GetIcon(data.Icon)
         local textX = iconImg and 24 or 10
-        local btnWidth = textX + labelTextWidth(page.Name) + 10
+        local btnWidth = textX + labelTextWidth(page.Name) + 18
         btn.Size = UDim2.new(0, btnWidth, 0, 22)
         if iconImg then
             tabIcon = self:Create("ImageLabel", {
