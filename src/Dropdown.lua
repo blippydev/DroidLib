@@ -26,7 +26,7 @@ function Library.Sections:Dropdown(data)
     }, row)
     Library:Themed(btn, "BackgroundColor3", "Element2")
     local dd = { Flag = flag, _open = false }
-    Library:Corner(btn, 0)
+    Library:Corner(btn, 6)
     local ddStroke = Library:Stroke(btn, 1)
     Library:Connect(btn.MouseEnter, function()
         Library:Tween(ddStroke, { Color = Library.Theme.Accent }, 0.15)

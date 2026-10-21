@@ -35,7 +35,7 @@ function Library:Page(window, data, level, parentTab)
         BackgroundTransparency = isSub and 0 or 1,
         LayoutOrder = idx,
     }, strip)
-    self:Corner(btn, 0)
+    self:Corner(btn, 4)
     local nameLbl
     local subStroke = nil
     local subEdge = nil
@@ -124,6 +124,7 @@ function Library:Page(window, data, level, parentTab)
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     }, holder)
+    self:Themed(left, "ScrollBarImageColor3", "Outline")
     self:Create("UIListLayout", {
         Padding = UDim.new(0, 4),
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -138,6 +139,7 @@ function Library:Page(window, data, level, parentTab)
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     }, holder)
+    self:Themed(right, "ScrollBarImageColor3", "Outline")
     self:Create("UIListLayout", {
         Padding = UDim.new(0, 4),
         SortOrder = Enum.SortOrder.LayoutOrder,

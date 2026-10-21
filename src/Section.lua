@@ -22,7 +22,7 @@ function Library:Section(page, data)
         ClipsDescendants = true,
     }, column)
     self:Themed(box, "BackgroundColor3", "Panel")
-    self:Corner(box, 0)
+    self:Corner(box, 6)
     self:Stroke(box, 1, "OutlineSoft")
 
     local head = self:Create("TextLabel", {

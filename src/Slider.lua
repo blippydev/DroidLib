@@ -43,21 +43,21 @@ function Library.Sections:Slider(data)
         BorderSizePixel = 0,
     }, row)
     Library:Themed(bar, "BackgroundColor3", "Element2")
-    Library:Corner(bar, 0)
+    Library:Corner(bar, 4)
     Library:Stroke(bar, 1)
     local fill = Library:Create("Frame", {
         Size = UDim2.new(0, 0, 1, 0),
         BorderSizePixel = 0,
     }, bar)
     Library:Themed(fill, "BackgroundColor3", "Accent")
-    Library:Corner(fill, 0)
+    Library:Corner(fill, 4)
     local sheen = Library:Create("Frame", {
         Size = UDim2.new(1, 0, 0.5, 0),
         BorderSizePixel = 0,
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 0.85,
     }, fill)
-    Library:Corner(sheen, 0)
+    Library:Corner(sheen, 4)
 
     local slider = {}
     local dragging = false

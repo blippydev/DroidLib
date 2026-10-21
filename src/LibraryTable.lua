@@ -10,6 +10,8 @@ Library.MenuKey = Enum.KeyCode.RightShift
 -- Linoria-look palette: flat dark, thin outlines, blue accent, mono text.
 -- Keys mirror Linoria's 5-color scheme (BackgroundColor/MainColor/
 -- AccentColor/OutlineColor/FontColor) mapped onto DWLib's 12 keys.
+-- Type is Gotham everywhere (mono Code survives only on chips/readouts);
+-- corners are real (SquareCorners=false) with per-element radii.
 Library.Theme = {
     Background = Color3.fromRGB(20, 20, 20),   -- 0x141414 window bg
     Panel = Color3.fromRGB(10, 10, 10),        -- darker section cards
@@ -166,10 +168,10 @@ Library.Folders = {
 
 Library.UIScale = 1
 -- Linoria-look style switches. SquareCorners flattens every UICorner (radius
--- 0); Font routes every widget's text through one mono face. Both are read
--- live by Utils:Corner and the Font= fields across src/.
-Library.SquareCorners = true
-Library.Font = Enum.Font.Code
+-- 0); off by default so each element's own radius applies. Font routes every
+-- widget's text through one face.
+Library.SquareCorners = false
+Library.Font = Enum.Font.Gotham
 -- Custom outline: SetBorder({ Color = Color3, Transparency = 0..1,
 -- Thickness = 1..6 }) re-tints/re-sizes every chrome stroke; Color = false
 -- reverts to the theme outline. Runtime setting (not config-persisted).

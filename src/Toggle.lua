@@ -10,8 +10,8 @@ function Library.Sections:Toggle(data)
     }, self.Items.List)
 
     local box = Library:Create("TextButton", {
-        Position = UDim2.new(0, 0, 0.5, -7),
-        Size = UDim2.new(0, 14, 0, 14),
+        Position = UDim2.new(0, 0, 0.5, -8),
+        Size = UDim2.new(0, 30, 0, 16),
         AutoButtonColor = false,
         Font = Library.Font,
         TextSize = 10,
@@ -19,13 +19,20 @@ function Library.Sections:Toggle(data)
         BorderSizePixel = 0,
     }, row)
     Library:Themed(box, "BackgroundColor3", "Element2")
-    Library:Themed(box, "TextColor3", "Text")
-    Library:Corner(box, 0)
+    Library:Corner(box, 8)
     local boxStroke = Library:Stroke(box, 1)
+    local knob = Library:Create("Frame", {
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 3, 0.5, 0),
+        Size = UDim2.new(0, 10, 0, 10),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    }, box)
+    Library:Corner(knob, 5)
 
     local lbl = Library:Create("TextButton", {
-        Position = UDim2.new(0, 19, 0, 0),
-        Size = UDim2.new(1, -70, 1, 0),
+        Position = UDim2.new(0, 37, 0, 0),
+        Size = UDim2.new(1, -88, 1, 0),
         BackgroundTransparency = 1,
         AutoButtonColor = false,
         Font = Library.Font,
@@ -58,12 +65,10 @@ function Library.Sections:Toggle(data)
         local t = instant and 0 or 0.15
         if state then
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Accent }, t)
-            task.delay(t, function()
-                if state and box.Parent then box.Text = "✓" end
-            end)
+            Library:Tween(knob, { Position = UDim2.new(0, 17, 0.5, 0) }, t)
         else
-            box.Text = ""
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Element2 }, t)
+            Library:Tween(knob, { Position = UDim2.new(0, 3, 0.5, 0) }, t)
         end
     end
     paint(true)

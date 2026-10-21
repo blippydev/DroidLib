@@ -22,7 +22,7 @@ function Library:Window(data)
         BorderSizePixel = 0,
     }, self.Holder)
     self:Themed(root, "BackgroundColor3", "Background")
-    self:Corner(root, 0)
+    self:Corner(root, 8)
 
     -- Dedicated window border: its own frame + stroke so it can grow to any
     -- thickness (the UIStroke sits outside the content and follows resize /
@@ -35,6 +35,7 @@ function Library:Window(data)
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
     }, root)
+    self:Corner(border, 8)
     local borderStroke = self:Create("UIStroke", {
         ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
         Thickness = (self.WindowBorder and self.WindowBorder.Thickness) or 1,
@@ -105,7 +106,7 @@ function Library:Window(data)
     }, top)
     self:Themed(search, "BackgroundColor3", "Inline")
     self:Themed(search, "TextColor3", "Text")
-    self:Corner(search, 0)
+    self:Corner(search, 6)
     local searchStroke = self:Stroke(search, 1)
     self:Connect(search.Focused, function()
         Library:Tween(searchStroke, { Color = Library.Theme.Accent }, 0.15)
@@ -133,6 +134,7 @@ function Library:Window(data)
         }, top)
         self:Themed(b, "BackgroundColor3", "Panel")
         self:Themed(b, "TextColor3", "TextMuted")
+        self:Corner(b, 4)
         local stroke = self:Stroke(b, 1, "OutlineSoft")
         Library:Connect(b.MouseEnter, function()
             Library:Tween(b, { BackgroundColor3 = Library.Theme.Element2 }, 0.12)

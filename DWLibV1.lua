@@ -46,6 +46,8 @@ Library.MenuKey = Enum.KeyCode.RightShift
 -- Linoria-look palette: flat dark, thin outlines, blue accent, mono text.
 -- Keys mirror Linoria's 5-color scheme (BackgroundColor/MainColor/
 -- AccentColor/OutlineColor/FontColor) mapped onto DWLib's 12 keys.
+-- Type is Gotham everywhere (mono Code survives only on chips/readouts);
+-- corners are real (SquareCorners=false) with per-element radii.
 Library.Theme = {
     Background = Color3.fromRGB(20, 20, 20),   -- 0x141414 window bg
     Panel = Color3.fromRGB(10, 10, 10),        -- darker section cards
@@ -202,10 +204,10 @@ Library.Folders = {
 
 Library.UIScale = 1
 -- Linoria-look style switches. SquareCorners flattens every UICorner (radius
--- 0); Font routes every widget's text through one mono face. Both are read
--- live by Utils:Corner and the Font= fields across src/.
-Library.SquareCorners = true
-Library.Font = Enum.Font.Code
+-- 0); off by default so each element's own radius applies. Font routes every
+-- widget's text through one face.
+Library.SquareCorners = false
+Library.Font = Enum.Font.Gotham
 -- Custom outline: SetBorder({ Color = Color3, Transparency = 0..1,
 -- Thickness = 1..6 }) re-tints/re-sizes every chrome stroke; Color = false
 -- reverts to the theme outline. Runtime setting (not config-persisted).
@@ -1141,7 +1143,7 @@ function Library:Window(data)
         BorderSizePixel = 0,
     }, self.Holder)
     self:Themed(root, "BackgroundColor3", "Background")
-    self:Corner(root, 0)
+    self:Corner(root, 8)
 
     -- Dedicated window border: its own frame + stroke so it can grow to any
     -- thickness (the UIStroke sits outside the content and follows resize /
@@ -1154,6 +1156,7 @@ function Library:Window(data)
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
     }, root)
+    self:Corner(border, 8)
     local borderStroke = self:Create("UIStroke", {
         ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
         Thickness = (self.WindowBorder and self.WindowBorder.Thickness) or 1,
@@ -1224,7 +1227,7 @@ function Library:Window(data)
     }, top)
     self:Themed(search, "BackgroundColor3", "Inline")
     self:Themed(search, "TextColor3", "Text")
-    self:Corner(search, 0)
+    self:Corner(search, 6)
     local searchStroke = self:Stroke(search, 1)
     self:Connect(search.Focused, function()
         Library:Tween(searchStroke, { Color = Library.Theme.Accent }, 0.15)
@@ -1252,6 +1255,7 @@ function Library:Window(data)
         }, top)
         self:Themed(b, "BackgroundColor3", "Panel")
         self:Themed(b, "TextColor3", "TextMuted")
+        self:Corner(b, 4)
         local stroke = self:Stroke(b, 1, "OutlineSoft")
         Library:Connect(b.MouseEnter, function()
             Library:Tween(b, { BackgroundColor3 = Library.Theme.Element2 }, 0.12)
@@ -1705,7 +1709,7 @@ function Library:Page(window, data, level, parentTab)
         BackgroundTransparency = isSub and 0 or 1,
         LayoutOrder = idx,
     }, strip)
-    self:Corner(btn, 0)
+    self:Corner(btn, 4)
     local nameLbl
     local subStroke = nil
     local subEdge = nil
@@ -1794,6 +1798,7 @@ function Library:Page(window, data, level, parentTab)
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     }, holder)
+    self:Themed(left, "ScrollBarImageColor3", "Outline")
     self:Create("UIListLayout", {
         Padding = UDim.new(0, 4),
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -1808,6 +1813,7 @@ function Library:Page(window, data, level, parentTab)
         CanvasSize = UDim2.new(0, 0, 0, 0),
         AutomaticCanvasSize = Enum.AutomaticSize.Y,
     }, holder)
+    self:Themed(right, "ScrollBarImageColor3", "Outline")
     self:Create("UIListLayout", {
         Padding = UDim.new(0, 4),
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -2020,7 +2026,7 @@ function Library:Section(page, data)
         ClipsDescendants = true,
     }, column)
     self:Themed(box, "BackgroundColor3", "Panel")
-    self:Corner(box, 0)
+    self:Corner(box, 6)
     self:Stroke(box, 1, "OutlineSoft")
 
     local head = self:Create("TextLabel", {
@@ -2146,8 +2152,8 @@ function Library.Sections:Toggle(data)
     }, self.Items.List)
 
     local box = Library:Create("TextButton", {
-        Position = UDim2.new(0, 0, 0.5, -7),
-        Size = UDim2.new(0, 14, 0, 14),
+        Position = UDim2.new(0, 0, 0.5, -8),
+        Size = UDim2.new(0, 30, 0, 16),
         AutoButtonColor = false,
         Font = Library.Font,
         TextSize = 10,
@@ -2155,13 +2161,20 @@ function Library.Sections:Toggle(data)
         BorderSizePixel = 0,
     }, row)
     Library:Themed(box, "BackgroundColor3", "Element2")
-    Library:Themed(box, "TextColor3", "Text")
-    Library:Corner(box, 0)
+    Library:Corner(box, 8)
     local boxStroke = Library:Stroke(box, 1)
+    local knob = Library:Create("Frame", {
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = UDim2.new(0, 3, 0.5, 0),
+        Size = UDim2.new(0, 10, 0, 10),
+        BorderSizePixel = 0,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+    }, box)
+    Library:Corner(knob, 5)
 
     local lbl = Library:Create("TextButton", {
-        Position = UDim2.new(0, 19, 0, 0),
-        Size = UDim2.new(1, -70, 1, 0),
+        Position = UDim2.new(0, 37, 0, 0),
+        Size = UDim2.new(1, -88, 1, 0),
         BackgroundTransparency = 1,
         AutoButtonColor = false,
         Font = Library.Font,
@@ -2194,12 +2207,10 @@ function Library.Sections:Toggle(data)
         local t = instant and 0 or 0.15
         if state then
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Accent }, t)
-            task.delay(t, function()
-                if state and box.Parent then box.Text = "✓" end
-            end)
+            Library:Tween(knob, { Position = UDim2.new(0, 17, 0.5, 0) }, t)
         else
-            box.Text = ""
             Library:Tween(box, { BackgroundColor3 = Library.Theme.Element2 }, t)
+            Library:Tween(knob, { Position = UDim2.new(0, 3, 0.5, 0) }, t)
         end
     end
     paint(true)
@@ -2438,21 +2449,21 @@ function Library.Sections:Slider(data)
         BorderSizePixel = 0,
     }, row)
     Library:Themed(bar, "BackgroundColor3", "Element2")
-    Library:Corner(bar, 0)
+    Library:Corner(bar, 4)
     Library:Stroke(bar, 1)
     local fill = Library:Create("Frame", {
         Size = UDim2.new(0, 0, 1, 0),
         BorderSizePixel = 0,
     }, bar)
     Library:Themed(fill, "BackgroundColor3", "Accent")
-    Library:Corner(fill, 0)
+    Library:Corner(fill, 4)
     local sheen = Library:Create("Frame", {
         Size = UDim2.new(1, 0, 0.5, 0),
         BorderSizePixel = 0,
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 0.85,
     }, fill)
-    Library:Corner(sheen, 0)
+    Library:Corner(sheen, 4)
 
     local slider = {}
     local dragging = false
@@ -2606,7 +2617,7 @@ function Library.Sections:Dropdown(data)
     }, row)
     Library:Themed(btn, "BackgroundColor3", "Element2")
     local dd = { Flag = flag, _open = false }
-    Library:Corner(btn, 0)
+    Library:Corner(btn, 6)
     local ddStroke = Library:Stroke(btn, 1)
     Library:Connect(btn.MouseEnter, function()
         Library:Tween(ddStroke, { Color = Library.Theme.Accent }, 0.15)
@@ -2976,7 +2987,7 @@ function Library.Sections:Textbox(data)
     }, row)
     Library:Themed(box, "BackgroundColor3", "Inline")
     Library:Themed(box, "TextColor3", "Text")
-    Library:Corner(box, 0)
+    Library:Corner(box, 6)
     local boxStroke = Library:Stroke(box, 1)
     Library:Create("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8) }, box)
     Library:Connect(box.Focused, function()
