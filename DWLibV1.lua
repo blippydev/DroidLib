@@ -4667,7 +4667,7 @@ function Library:ESPPreview(data)
     local boxT, boxB = makeStrip(), makeStrip()
     local tracer = makeStrip()
     local skeleton = {}
-    for _ = 1, 13 do
+    for _ = 1, 14 do
         skeleton[#skeleton + 1] = makeStrip()
     end
 
@@ -4938,9 +4938,12 @@ function Library:ESPPreview(data)
         local tx, ty = project(liveHrp.Position + Vector3.new(0, halfY, 0))
         local bx, by = project(liveHrp.Position - Vector3.new(0, halfY, 0))
 
-        -- Tracer first: independent of box projection.
-        if tx and on("Tracer") then
-            placeStrip(tracer, Vector2.new(size.X * 0.5, size.Y - 1), Vector2.new(tx, ty), espColor)
+        -- Tracer first: bottom-center of the panel to the feet (not the head).
+        if on("Tracer") then
+            local fx, fy = (bx and bx or sx), (by and by or sy)
+            if fx then
+                placeStrip(tracer, Vector2.new(size.X * 0.5, size.Y - 1), Vector2.new(fx, fy), espColor)
+            end
         end
 
         if tx and bx then
@@ -4956,18 +4959,20 @@ function Library:ESPPreview(data)
                     placeStrip(boxR, Vector2.new(cx + w * 0.5, topY), Vector2.new(cx + w * 0.5, botY), espColor)
                     placeStrip(boxT, Vector2.new(cx - w * 0.5, topY), Vector2.new(cx + w * 0.5, topY), espColor)
                     placeStrip(boxB, Vector2.new(cx - w * 0.5, botY), Vector2.new(cx + w * 0.5, botY), espColor)
+                end
 
-                    -- Health bar left of the box, straight from live hp.
-                    if on("Health") then
-                        local liveHum = charRef:FindFirstChildOfClass("Humanoid")
-                        local hpMax = liveHum and math.max(1, liveHum.MaxHealth) or 100
-                        local hp = liveHum and math.clamp(liveHum.Health / hpMax, 0, 1) or 1
-                        hpTrack.Size = UDim2.new(0, 5, 0, h)
-                        hpTrack.Position = UDim2.new(0, cx - w * 0.5 - 5, 0, (topY + botY) * 0.5)
-                        hpFill.Size = UDim2.new(1, 0, hp, 0)
-                        hpFill.BackgroundColor3 = green:Lerp(red, 1 - hp)
-                        hpTrack.Visible = true
-                    end
+                -- Health bar left of the box, straight from live hp.
+                -- Standalone: needs the box geometry, not the Box toggle.
+                if on("Health") then
+                    local liveHum = charRef:FindFirstChildOfClass("Humanoid")
+                    local hpMax = liveHum and math.max(1, liveHum.MaxHealth) or 100
+                    local hp = liveHum and math.clamp(liveHum.Health / hpMax, 0, 1) or 1
+                    local w = h * 0.45
+                    hpTrack.Size = UDim2.new(0, 5, 0, h)
+                    hpTrack.Position = UDim2.new(0, cx - w * 0.5 - 5, 0, (topY + botY) * 0.5)
+                    hpFill.Size = UDim2.new(1, 0, hp, 0)
+                    hpFill.BackgroundColor3 = green:Lerp(red, 1 - hp)
+                    hpTrack.Visible = true
                 end
 
                 -- Name above the box.
