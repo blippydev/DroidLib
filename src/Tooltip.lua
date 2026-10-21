@@ -45,9 +45,24 @@ function Library:AttachTooltip(inst, text)
         if not card or not card.Parent then return end
         self:BringToFront(card)
         label.Text = text
-        local bounds = label.TextBounds
-        local w = math.clamp(bounds.X + 20, 40, self.TooltipMaxWidth)
-        local h = math.max(26, bounds.Y + 14)
+        -- Two-step TextService measure: TextBounds reads back the card's
+        -- STALE size (last tooltip's width), so long text wrapped at the old
+        -- width and the card clipped it. Measure unwrapped, clamp, re-measure
+        -- wrapped at the final width: the card always fits every word.
+        local w, h, measured = 100, 26, false
+        pcall(function()
+            local ts = game:GetService("TextService")
+            local single = ts:GetTextSize(text, 12, Library.Font, Vector2.new(10000, 100))
+            w = math.clamp(single.X + 20, 40, self.TooltipMaxWidth)
+            local wrapped = ts:GetTextSize(text, 12, Library.Font, Vector2.new(math.max(40, w - 16), 10000))
+            h = math.max(26, wrapped.Y + 14)
+            measured = true
+        end)
+        if not measured then
+            local bounds = label.TextBounds
+            w = math.clamp(bounds.X + 20, 40, self.TooltipMaxWidth)
+            h = math.max(26, bounds.Y + 14)
+        end
         card.Size = UDim2.new(0, w, 0, h)
         card.Visible = true
     end)
