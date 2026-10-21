@@ -6,6 +6,7 @@ function Library:KeybindList(data)
     -- Base metrics at scale 1. Wide and short on purpose: a horizontal
     -- rectangle, title bar on top, bound keys in two columns below.
     local kl = { Items = {}, _scale = scale }
+    local baseTitle = tostring(data.Title or "Keybinds")
     local dims = {}
     local function measure()
         local s = kl._scale
@@ -25,7 +26,8 @@ function Library:KeybindList(data)
 
     local frame = self:Create("Frame", {
         Name = "KeybindList",
-        Position = UDim2.new(1, -218, 0, 60),
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = data.Position or UDim2.new(0, 12, 0.5, 0),
         Size = UDim2.new(0, dims.width, 0, 30),
         AutomaticSize = Enum.AutomaticSize.Y,
         BorderSizePixel = 0,
@@ -49,11 +51,11 @@ function Library:KeybindList(data)
     self:Themed(head, "TextColor3", "Text")
 
     local div = self:Create("Frame", {
-        Position = UDim2.new(0, dims.padX, 0, dims.headH),
-        Size = UDim2.new(1, -dims.padX * 2, 0, 1),
+        Position = UDim2.new(0, 0, 0, dims.headH),
+        Size = UDim2.new(1, 0, 0, 2),
         BorderSizePixel = 0,
     }, frame)
-    self:Themed(div, "BackgroundColor3", "OutlineSoft")
+    self:Themed(div, "BackgroundColor3", "Accent")
 
     -- Entry area: full-width rows (one column), so each
     -- | name | STATE - [KEY] | row has room to breathe.
@@ -83,8 +85,8 @@ function Library:KeybindList(data)
         head.Position = UDim2.new(0, dims.padX, 0, 0)
         head.Size = UDim2.new(1, -dims.padX * 2, 0, dims.headH)
         head.TextSize = dims.headFont
-        div.Position = UDim2.new(0, dims.padX, 0, dims.headH)
-        div.Size = UDim2.new(1, -dims.padX * 2, 0, 1)
+        div.Position = UDim2.new(0, 0, 0, dims.headH)
+        div.Size = UDim2.new(1, 0, 0, 2)
         list.Position = UDim2.new(0, dims.padX, 0, dims.headH + 6)
         list.Size = UDim2.new(1, -dims.padX * 2, 0, 10)
         for _, kid in ipairs(col:GetChildren()) do
@@ -116,6 +118,7 @@ function Library:KeybindList(data)
             end
         end
         if #rows == 0 then
+            head.Text = baseTitle .. " (0)"
             local row = Library:Create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, dims.rowH),
                 BackgroundTransparency = 1,
@@ -127,8 +130,10 @@ function Library:KeybindList(data)
             Library:Themed(row, "TextColor3", "TextMuted")
             return
         end
-        -- Row anatomy: | name | MODE [KEY] |
-        -- Pipes are 1px dividers; the name is never ellipsized.
+        head.Text = baseTitle .. " (" .. #rows .. ")"
+        -- Row anatomy: status dot | name | chip (MODE [KEY]).
+        -- The chip lights up (Surface bg + Accent text) while the bind is
+        -- ON and sinks to flat muted text while OFF.
         local function addRow(col, order, r)
             if r.legacy then
                 local row = Library:Create("TextLabel", {
@@ -151,21 +156,17 @@ function Library:KeybindList(data)
                 BackgroundTransparency = 1,
                 LayoutOrder = order,
             }, col)
-            local edgeL = Library:Create("Frame", {
-                Position = UDim2.new(0, 0, 0, 0),
-                Size = UDim2.new(0, 1, 1, 0),
+            local dot = Library:Create("Frame", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                Position = UDim2.new(0, pad, 0.5, 0),
+                Size = UDim2.new(0, 6, 0, 6),
                 BorderSizePixel = 0,
+                BackgroundColor3 = r.on and Color3.fromRGB(90, 255, 110) or Color3.fromRGB(110, 110, 120),
             }, rowF)
-            Library:Themed(edgeL, "BackgroundColor3", "OutlineSoft")
-            local edgeR = Library:Create("Frame", {
-                Position = UDim2.new(1, -1, 0, 0),
-                Size = UDim2.new(0, 1, 1, 0),
-                BorderSizePixel = 0,
-            }, rowF)
-            Library:Themed(edgeR, "BackgroundColor3", "OutlineSoft")
+            Library:Corner(dot, 3)
             local nameL = Library:Create("TextLabel", {
-                Position = UDim2.new(0, pad + 1, 0, 0),
-                Size = UDim2.new(1, -(rightW + pad * 2 + 3), 1, 0),
+                Position = UDim2.new(0, pad + 12, 0, 0),
+                Size = UDim2.new(1, -(rightW + pad * 2 + 14), 1, 0),
                 BackgroundTransparency = 1,
                 ClipsDescendants = true,
                 Font = Enum.Font.Code,
@@ -173,23 +174,27 @@ function Library:KeybindList(data)
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Text = tostring(r.name),
             }, rowF)
-            Library:Themed(nameL, "TextColor3", "Text")
-            local sep = Library:Create("Frame", {
-                Position = UDim2.new(1, -(rightW + pad + 1), 0, 0),
-                Size = UDim2.new(0, 1, 1, 0),
+            Library:Themed(nameL, "TextColor3", r.on and "Text" or "TextMuted")
+            local chip = Library:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                Position = UDim2.new(1, 0, 0.5, 0),
+                Size = UDim2.new(0, rightW, 0, dims.rowH),
                 BorderSizePixel = 0,
+                BackgroundTransparency = r.on and 0 or 0.6,
             }, rowF)
-            Library:Themed(sep, "BackgroundColor3", "OutlineSoft")
+            Library:Themed(chip, "BackgroundColor3", "Surface")
+            Library:Corner(chip, 0)
+            Library:Stroke(chip, 1)
             local rightL = Library:Create("TextLabel", {
-                Position = UDim2.new(1, -(rightW + 1), 0, 0),
-                Size = UDim2.new(0, rightW - pad, 1, 0),
+                Position = UDim2.new(0, 4, 0, 0),
+                Size = UDim2.new(1, -8, 1, 0),
                 BackgroundTransparency = 1,
                 ClipsDescendants = true,
                 Font = Enum.Font.Code,
                 TextSize = dims.rowFont,
                 TextXAlignment = Enum.TextXAlignment.Right,
                 Text = tostring(r.mode) .. " [" .. tostring(r.key) .. "]",
-            }, rowF)
+            }, chip)
             Library:Themed(rightL, "TextColor3", r.on and "Accent" or "TextMuted")
         end
         -- Top-to-bottom, one full-width row per bind.

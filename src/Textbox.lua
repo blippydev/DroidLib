@@ -53,6 +53,13 @@ function Library.Sections:Textbox(data)
             val = saved
             box.Text = val
         end
+    end, function()
+        local saved = Library.Flags[flag]
+        if type(saved) == "string" then
+            val = saved
+            box.Text = val
+        end
+        if type(data.Callback) == "function" then task.spawn(data.Callback, val) end
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(row, data.Tooltip)

@@ -126,6 +126,15 @@ function Library:LoadConfig(json, opts)
             end
             if type(v) == "table" and v.__c3 then
                 self.Flags[k] = Color3.new(v.r, v.g, v.b)
+            elseif type(v) == "table" and v.__enum then
+                local okEnum, ev = pcall(function()
+                    return Enum[tostring(v.t)][tostring(v.n)]
+                end)
+                if okEnum and typeof(ev) == "EnumItem" then
+                    self.Flags[k] = ev
+                else
+                    continue
+                end
             elseif type(v) == "table" and v.__key then
                 local key = nil
                 pcall(function()
@@ -137,7 +146,7 @@ function Library:LoadConfig(json, opts)
             end
         end
     end
-    self:ApplyFlags()
+    self:ApplyFlags(true)
     local sc = tonumber(self.Flags.__uiscale)
     if sc then
         self:SetUIScale(sc)

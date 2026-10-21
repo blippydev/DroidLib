@@ -279,6 +279,24 @@ function Library.Sections:Dropdown(data)
             current = saved
             paint(); rebuild()
         end
+    end, function()
+        local saved = Library.Flags[flag]
+        if multi then
+            if type(saved) == "table" then
+                current = {}
+                local isArray = saved[1] ~= nil
+                if isArray then
+                    for _, x in ipairs(saved) do current[tostring(x)] = true end
+                else
+                    for k in pairs(saved) do current[tostring(k)] = true end
+                end
+                paint(); rebuild()
+            end
+        elseif type(saved) == "string" then
+            current = saved
+            paint(); rebuild()
+        end
+        fire()
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(btn, data.Tooltip)

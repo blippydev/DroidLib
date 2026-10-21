@@ -335,6 +335,11 @@ function Library:_attachKeybind(row, data)
                 end
             end
         end
+    end, function()
+        if link then
+            toggled = linkOn()
+        end
+        fire()
     end)
     table.insert(Library._keybinds, kb)
     Library:_pushKeybindList()

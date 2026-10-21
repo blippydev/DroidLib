@@ -399,17 +399,30 @@ function Library:NextFlag()
 end
 
 Library._widgets = {}
+Library._appliers = Library._appliers or {}
 
-function Library:TrackWidget(flag, refresh)
-    if type(refresh) ~= "function" then return end
-    self._widgets[flag] = self._widgets[flag] or {}
-    table.insert(self._widgets[flag], refresh)
+function Library:TrackWidget(flag, refresh, fire)
+    if type(refresh) == "function" then
+        self._widgets[flag] = self._widgets[flag] or {}
+        table.insert(self._widgets[flag], refresh)
+    end
+    if type(fire) == "function" then
+        self._appliers[flag] = self._appliers[flag] or {}
+        table.insert(self._appliers[flag], fire)
+    end
 end
 
-function Library:ApplyFlags()
+function Library:ApplyFlags(fireCallbacks)
     for _, list in pairs(self._widgets) do
         for _, fn in ipairs(list) do
             pcall(fn)
+        end
+    end
+    if fireCallbacks then
+        for _, list in pairs(self._appliers) do
+            for _, fn in ipairs(list) do
+                pcall(fn)
+            end
         end
     end
     self:_pushKeybindList()
@@ -2272,6 +2285,22 @@ function Library.Sections:Toggle(data)
         end
         paint(true)
         if kbRef then kbRef:Refresh() end
+    end, function()
+        state = Library.Flags[flag] and true or false
+        if kbRef and kbRef.GetMode then
+            local m = kbRef:GetMode()
+            if m == "Always" then
+                state = true
+            elseif m == "Hold" then
+                state = false
+            end
+        end
+        Library.Flags[flag] = state
+        paint(true)
+        if kbRef then kbRef:Refresh() end
+        if type(data.Callback) == "function" then
+            task.spawn(data.Callback, state)
+        end
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(row, data.Tooltip)
@@ -2531,6 +2560,14 @@ function Library.Sections:Slider(data)
             val = round(math.clamp(saved, min, max))
             paint()
         end
+    end, function()
+        local saved = tonumber(Library.Flags[flag])
+        if saved ~= nil then
+            val = round(math.clamp(saved, min, max))
+            Library.Flags[flag] = val
+            paint()
+        end
+        fireCallback(val)
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(row, data.Tooltip)
@@ -2822,6 +2859,24 @@ function Library.Sections:Dropdown(data)
             current = saved
             paint(); rebuild()
         end
+    end, function()
+        local saved = Library.Flags[flag]
+        if multi then
+            if type(saved) == "table" then
+                current = {}
+                local isArray = saved[1] ~= nil
+                if isArray then
+                    for _, x in ipairs(saved) do current[tostring(x)] = true end
+                else
+                    for k in pairs(saved) do current[tostring(k)] = true end
+                end
+                paint(); rebuild()
+            end
+        elseif type(saved) == "string" then
+            current = saved
+            paint(); rebuild()
+        end
+        fire()
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(btn, data.Tooltip)
@@ -2944,6 +2999,13 @@ function Library.Sections:Textbox(data)
             val = saved
             box.Text = val
         end
+    end, function()
+        local saved = Library.Flags[flag]
+        if type(saved) == "string" then
+            val = saved
+            box.Text = val
+        end
+        if type(data.Callback) == "function" then task.spawn(data.Callback, val) end
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(row, data.Tooltip)
@@ -3304,6 +3366,11 @@ function Library:_attachKeybind(row, data)
                 end
             end
         end
+    end, function()
+        if link then
+            toggled = linkOn()
+        end
+        fire()
     end)
     table.insert(Library._keybinds, kb)
     Library:_pushKeybindList()
@@ -3583,6 +3650,21 @@ function Library:_attachColorpicker(row, data)
                 btn.BackgroundTransparency = hasAlpha and alpha or 0
             end)
         end
+    end, function()
+        local saved = Library.Flags[flag]
+        if typeof(saved) == "Color3" then
+            h, s, v = saved:ToHSV()
+            if hasAlpha then
+                local sa = tonumber(Library.Flags[flag .. "_alpha"])
+                if sa ~= nil then alpha = math.clamp(sa, 0, 1) end
+            end
+            paint()
+            pcall(function()
+                btn.BackgroundColor3 = current()
+                btn.BackgroundTransparency = hasAlpha and alpha or 0
+            end)
+        end
+        fire()
     end)
     function picker:SetOpen(o)
         o = o and true or false
@@ -3979,6 +4061,15 @@ function Library:LoadConfig(json, opts)
             end
             if type(v) == "table" and v.__c3 then
                 self.Flags[k] = Color3.new(v.r, v.g, v.b)
+            elseif type(v) == "table" and v.__enum then
+                local okEnum, ev = pcall(function()
+                    return Enum[tostring(v.t)][tostring(v.n)]
+                end)
+                if okEnum and typeof(ev) == "EnumItem" then
+                    self.Flags[k] = ev
+                else
+                    continue
+                end
             elseif type(v) == "table" and v.__key then
                 local key = nil
                 pcall(function()
@@ -3990,7 +4081,7 @@ function Library:LoadConfig(json, opts)
             end
         end
     end
-    self:ApplyFlags()
+    self:ApplyFlags(true)
     local sc = tonumber(self.Flags.__uiscale)
     if sc then
         self:SetUIScale(sc)
@@ -4200,6 +4291,7 @@ function Library:KeybindList(data)
     -- Base metrics at scale 1. Wide and short on purpose: a horizontal
     -- rectangle, title bar on top, bound keys in two columns below.
     local kl = { Items = {}, _scale = scale }
+    local baseTitle = tostring(data.Title or "Keybinds")
     local dims = {}
     local function measure()
         local s = kl._scale
@@ -4219,7 +4311,8 @@ function Library:KeybindList(data)
 
     local frame = self:Create("Frame", {
         Name = "KeybindList",
-        Position = UDim2.new(1, -218, 0, 60),
+        AnchorPoint = Vector2.new(0, 0.5),
+        Position = data.Position or UDim2.new(0, 12, 0.5, 0),
         Size = UDim2.new(0, dims.width, 0, 30),
         AutomaticSize = Enum.AutomaticSize.Y,
         BorderSizePixel = 0,
@@ -4243,11 +4336,11 @@ function Library:KeybindList(data)
     self:Themed(head, "TextColor3", "Text")
 
     local div = self:Create("Frame", {
-        Position = UDim2.new(0, dims.padX, 0, dims.headH),
-        Size = UDim2.new(1, -dims.padX * 2, 0, 1),
+        Position = UDim2.new(0, 0, 0, dims.headH),
+        Size = UDim2.new(1, 0, 0, 2),
         BorderSizePixel = 0,
     }, frame)
-    self:Themed(div, "BackgroundColor3", "OutlineSoft")
+    self:Themed(div, "BackgroundColor3", "Accent")
 
     -- Entry area: full-width rows (one column), so each
     -- | name | STATE - [KEY] | row has room to breathe.
@@ -4277,8 +4370,8 @@ function Library:KeybindList(data)
         head.Position = UDim2.new(0, dims.padX, 0, 0)
         head.Size = UDim2.new(1, -dims.padX * 2, 0, dims.headH)
         head.TextSize = dims.headFont
-        div.Position = UDim2.new(0, dims.padX, 0, dims.headH)
-        div.Size = UDim2.new(1, -dims.padX * 2, 0, 1)
+        div.Position = UDim2.new(0, 0, 0, dims.headH)
+        div.Size = UDim2.new(1, 0, 0, 2)
         list.Position = UDim2.new(0, dims.padX, 0, dims.headH + 6)
         list.Size = UDim2.new(1, -dims.padX * 2, 0, 10)
         for _, kid in ipairs(col:GetChildren()) do
@@ -4310,6 +4403,7 @@ function Library:KeybindList(data)
             end
         end
         if #rows == 0 then
+            head.Text = baseTitle .. " (0)"
             local row = Library:Create("TextLabel", {
                 Size = UDim2.new(1, 0, 0, dims.rowH),
                 BackgroundTransparency = 1,
@@ -4321,8 +4415,10 @@ function Library:KeybindList(data)
             Library:Themed(row, "TextColor3", "TextMuted")
             return
         end
-        -- Row anatomy: | name | MODE [KEY] |
-        -- Pipes are 1px dividers; the name is never ellipsized.
+        head.Text = baseTitle .. " (" .. #rows .. ")"
+        -- Row anatomy: status dot | name | chip (MODE [KEY]).
+        -- The chip lights up (Surface bg + Accent text) while the bind is
+        -- ON and sinks to flat muted text while OFF.
         local function addRow(col, order, r)
             if r.legacy then
                 local row = Library:Create("TextLabel", {
@@ -4345,21 +4441,17 @@ function Library:KeybindList(data)
                 BackgroundTransparency = 1,
                 LayoutOrder = order,
             }, col)
-            local edgeL = Library:Create("Frame", {
-                Position = UDim2.new(0, 0, 0, 0),
-                Size = UDim2.new(0, 1, 1, 0),
+            local dot = Library:Create("Frame", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                Position = UDim2.new(0, pad, 0.5, 0),
+                Size = UDim2.new(0, 6, 0, 6),
                 BorderSizePixel = 0,
+                BackgroundColor3 = r.on and Color3.fromRGB(90, 255, 110) or Color3.fromRGB(110, 110, 120),
             }, rowF)
-            Library:Themed(edgeL, "BackgroundColor3", "OutlineSoft")
-            local edgeR = Library:Create("Frame", {
-                Position = UDim2.new(1, -1, 0, 0),
-                Size = UDim2.new(0, 1, 1, 0),
-                BorderSizePixel = 0,
-            }, rowF)
-            Library:Themed(edgeR, "BackgroundColor3", "OutlineSoft")
+            Library:Corner(dot, 3)
             local nameL = Library:Create("TextLabel", {
-                Position = UDim2.new(0, pad + 1, 0, 0),
-                Size = UDim2.new(1, -(rightW + pad * 2 + 3), 1, 0),
+                Position = UDim2.new(0, pad + 12, 0, 0),
+                Size = UDim2.new(1, -(rightW + pad * 2 + 14), 1, 0),
                 BackgroundTransparency = 1,
                 ClipsDescendants = true,
                 Font = Enum.Font.Code,
@@ -4367,23 +4459,27 @@ function Library:KeybindList(data)
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Text = tostring(r.name),
             }, rowF)
-            Library:Themed(nameL, "TextColor3", "Text")
-            local sep = Library:Create("Frame", {
-                Position = UDim2.new(1, -(rightW + pad + 1), 0, 0),
-                Size = UDim2.new(0, 1, 1, 0),
+            Library:Themed(nameL, "TextColor3", r.on and "Text" or "TextMuted")
+            local chip = Library:Create("Frame", {
+                AnchorPoint = Vector2.new(1, 0.5),
+                Position = UDim2.new(1, 0, 0.5, 0),
+                Size = UDim2.new(0, rightW, 0, dims.rowH),
                 BorderSizePixel = 0,
+                BackgroundTransparency = r.on and 0 or 0.6,
             }, rowF)
-            Library:Themed(sep, "BackgroundColor3", "OutlineSoft")
+            Library:Themed(chip, "BackgroundColor3", "Surface")
+            Library:Corner(chip, 0)
+            Library:Stroke(chip, 1)
             local rightL = Library:Create("TextLabel", {
-                Position = UDim2.new(1, -(rightW + 1), 0, 0),
-                Size = UDim2.new(0, rightW - pad, 1, 0),
+                Position = UDim2.new(0, 4, 0, 0),
+                Size = UDim2.new(1, -8, 1, 0),
                 BackgroundTransparency = 1,
                 ClipsDescendants = true,
                 Font = Enum.Font.Code,
                 TextSize = dims.rowFont,
                 TextXAlignment = Enum.TextXAlignment.Right,
                 Text = tostring(r.mode) .. " [" .. tostring(r.key) .. "]",
-            }, rowF)
+            }, chip)
             Library:Themed(rightL, "TextColor3", r.on and "Accent" or "TextMuted")
         end
         -- Top-to-bottom, one full-width row per bind.
@@ -4622,6 +4718,25 @@ function Library:ESPPreview(data)
     local chams = nil            -- Highlight on the clone
     local charName = nil
 
+    -- Target selection: nil defaults to LocalPlayer.Character. Also accepts
+    -- a Model, a Player (follows their .Character), or a function returning
+    -- either (re-resolved every poll, so "follow my aim target" modes work).
+    local targetOverride = data.Target
+    local function resolveTarget()
+        local t = targetOverride
+        if type(t) == "function" then
+            local ok, v = pcall(t)
+            if ok then t = v else t = nil end
+        end
+        if typeof(t) == "Instance" then
+            if t:IsA("Player") then t = t.Character end
+            if typeof(t) == "Instance" and t.Parent then return t end
+            return nil
+        end
+        local char = Players.LocalPlayer.Character
+        return (typeof(char) == "Instance" and char.Parent) and char or nil
+    end
+
     local function clearOverlays()
         for _, f in ipairs({ boxL, boxR, boxT, boxB, tracer, hpTrack, nameL, distL }) do
             f.Visible = false
@@ -4632,7 +4747,7 @@ function Library:ESPPreview(data)
     end
 
     local function buildMirror()
-        local char = Players.LocalPlayer.Character
+        local char = resolveTarget()
         if clone then
             clone:Destroy()
             clone, cloneParts, liveParts = nil, nil, nil
@@ -4696,14 +4811,16 @@ function Library:ESPPreview(data)
         clearOverlays()
         foot.Text = "no character"
     end)
-    -- Late characters: games that spawn you after the script boots get caught
-    -- by this poll (CharacterAdded alone misses a char that exists-but-late).
+    -- Late characters + target switches: rebuild whenever the resolved
+    -- target instance changes (respawn, dropdown switch, aim target swap).
     self:Thread(function()
         while not self.Unloading do
             task.wait(1.5)
             if self.Unloading then break end
-            local ch = Players.LocalPlayer.Character
-            if (not clone) and typeof(ch) == "Instance" and ch.Parent then
+            local ch = resolveTarget()
+            if ch ~= charRef then
+                buildMirror()
+            elseif (not clone) and ch then
                 buildMirror()
             end
         end
@@ -4751,6 +4868,7 @@ function Library:ESPPreview(data)
     cam.CFrame = camCF
     cam.FieldOfView = 55
     cam.Parent = view
+    view.CurrentCamera = cam
 
     local FOV = 55
     -- Returns nx, ny (viewport pixels) or nil when behind camera.
@@ -4916,6 +5034,12 @@ function Library:ESPPreview(data)
     end)
 
     local ep = { _scale = scale }
+    function ep:SetTarget(t)
+        targetOverride = t
+        buildMirror()
+        return ep
+    end
+    function ep:GetTarget() return resolveTarget() end
     function ep:SetVisibility(v)
         root.Visible = v and true or false
     end
@@ -5956,6 +6080,7 @@ function Library:CreateWindow(data)
         window.KeybindList = Library:KeybindList({
             Visible = data.KeybindListVisible ~= false,
             Scale = data.KeybindListScale,
+            Position = data.KeybindListPosition,
         })
     end
 
@@ -5965,6 +6090,7 @@ function Library:CreateWindow(data)
             Scale = data.ESPPreviewScale,
             Title = data.ESPPreviewTitle,
             Flags = data.ESPPreviewFlags or {},
+            Target = data.ESPPreviewTarget,
         })
     end
 

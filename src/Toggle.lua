@@ -149,6 +149,22 @@ function Library.Sections:Toggle(data)
         end
         paint(true)
         if kbRef then kbRef:Refresh() end
+    end, function()
+        state = Library.Flags[flag] and true or false
+        if kbRef and kbRef.GetMode then
+            local m = kbRef:GetMode()
+            if m == "Always" then
+                state = true
+            elseif m == "Hold" then
+                state = false
+            end
+        end
+        Library.Flags[flag] = state
+        paint(true)
+        if kbRef then kbRef:Refresh() end
+        if type(data.Callback) == "function" then
+            task.spawn(data.Callback, state)
+        end
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(row, data.Tooltip)

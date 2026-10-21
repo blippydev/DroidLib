@@ -165,6 +165,14 @@ function Library.Sections:Slider(data)
             val = round(math.clamp(saved, min, max))
             paint()
         end
+    end, function()
+        local saved = tonumber(Library.Flags[flag])
+        if saved ~= nil then
+            val = round(math.clamp(saved, min, max))
+            Library.Flags[flag] = val
+            paint()
+        end
+        fireCallback(val)
     end)
     if type(data.Tooltip) == "string" and data.Tooltip ~= "" then
         Library:AttachTooltip(row, data.Tooltip)

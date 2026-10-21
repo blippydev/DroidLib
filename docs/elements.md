@@ -288,7 +288,8 @@ Library:Dialog({
 Library.Flags.my_flag      -- live values by Flag (toggles bool, sliders
                            -- number, dropdowns value/map, textboxes string,
                            -- colorpickers Color3, keybinds { Key, Mode, Toggled })
-Library:ApplyFlags()       -- repaint every widget from Flags (used by Load)
+Library:ApplyFlags()       -- repaint every widget from Flags (theme preset)
+Library:ApplyFlags(true)  -- repaint + fire every Callback (used by Load)
 
 Library:GetConfig()        -- JSON string (flags + theme + background)
 Library:SaveConfig("main") -- DWLIBV1/Configs/main.json (needs writefile)

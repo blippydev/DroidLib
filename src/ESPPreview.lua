@@ -194,6 +194,25 @@ function Library:ESPPreview(data)
     local chams = nil            -- Highlight on the clone
     local charName = nil
 
+    -- Target selection: nil defaults to LocalPlayer.Character. Also accepts
+    -- a Model, a Player (follows their .Character), or a function returning
+    -- either (re-resolved every poll, so "follow my aim target" modes work).
+    local targetOverride = data.Target
+    local function resolveTarget()
+        local t = targetOverride
+        if type(t) == "function" then
+            local ok, v = pcall(t)
+            if ok then t = v else t = nil end
+        end
+        if typeof(t) == "Instance" then
+            if t:IsA("Player") then t = t.Character end
+            if typeof(t) == "Instance" and t.Parent then return t end
+            return nil
+        end
+        local char = Players.LocalPlayer.Character
+        return (typeof(char) == "Instance" and char.Parent) and char or nil
+    end
+
     local function clearOverlays()
         for _, f in ipairs({ boxL, boxR, boxT, boxB, tracer, hpTrack, nameL, distL }) do
             f.Visible = false
@@ -204,7 +223,7 @@ function Library:ESPPreview(data)
     end
 
     local function buildMirror()
-        local char = Players.LocalPlayer.Character
+        local char = resolveTarget()
         if clone then
             clone:Destroy()
             clone, cloneParts, liveParts = nil, nil, nil
@@ -268,14 +287,16 @@ function Library:ESPPreview(data)
         clearOverlays()
         foot.Text = "no character"
     end)
-    -- Late characters: games that spawn you after the script boots get caught
-    -- by this poll (CharacterAdded alone misses a char that exists-but-late).
+    -- Late characters + target switches: rebuild whenever the resolved
+    -- target instance changes (respawn, dropdown switch, aim target swap).
     self:Thread(function()
         while not self.Unloading do
             task.wait(1.5)
             if self.Unloading then break end
-            local ch = Players.LocalPlayer.Character
-            if (not clone) and typeof(ch) == "Instance" and ch.Parent then
+            local ch = resolveTarget()
+            if ch ~= charRef then
+                buildMirror()
+            elseif (not clone) and ch then
                 buildMirror()
             end
         end
@@ -323,6 +344,7 @@ function Library:ESPPreview(data)
     cam.CFrame = camCF
     cam.FieldOfView = 55
     cam.Parent = view
+    view.CurrentCamera = cam
 
     local FOV = 55
     -- Returns nx, ny (viewport pixels) or nil when behind camera.
@@ -488,6 +510,12 @@ function Library:ESPPreview(data)
     end)
 
     local ep = { _scale = scale }
+    function ep:SetTarget(t)
+        targetOverride = t
+        buildMirror()
+        return ep
+    end
+    function ep:GetTarget() return resolveTarget() end
     function ep:SetVisibility(v)
         root.Visible = v and true or false
     end

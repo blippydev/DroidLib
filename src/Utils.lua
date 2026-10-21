@@ -115,17 +115,30 @@ function Library:NextFlag()
 end
 
 Library._widgets = {}
+Library._appliers = Library._appliers or {}
 
-function Library:TrackWidget(flag, refresh)
-    if type(refresh) ~= "function" then return end
-    self._widgets[flag] = self._widgets[flag] or {}
-    table.insert(self._widgets[flag], refresh)
+function Library:TrackWidget(flag, refresh, fire)
+    if type(refresh) == "function" then
+        self._widgets[flag] = self._widgets[flag] or {}
+        table.insert(self._widgets[flag], refresh)
+    end
+    if type(fire) == "function" then
+        self._appliers[flag] = self._appliers[flag] or {}
+        table.insert(self._appliers[flag], fire)
+    end
 end
 
-function Library:ApplyFlags()
+function Library:ApplyFlags(fireCallbacks)
     for _, list in pairs(self._widgets) do
         for _, fn in ipairs(list) do
             pcall(fn)
+        end
+    end
+    if fireCallbacks then
+        for _, list in pairs(self._appliers) do
+            for _, fn in ipairs(list) do
+                pcall(fn)
+            end
         end
     end
     self:_pushKeybindList()

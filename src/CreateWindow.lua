@@ -61,6 +61,7 @@ function Library:CreateWindow(data)
         window.KeybindList = Library:KeybindList({
             Visible = data.KeybindListVisible ~= false,
             Scale = data.KeybindListScale,
+            Position = data.KeybindListPosition,
         })
     end
 
@@ -70,6 +71,7 @@ function Library:CreateWindow(data)
             Scale = data.ESPPreviewScale,
             Title = data.ESPPreviewTitle,
             Flags = data.ESPPreviewFlags or {},
+            Target = data.ESPPreviewTarget,
         })
     end
 

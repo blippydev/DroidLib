@@ -263,6 +263,21 @@ function Library:_attachColorpicker(row, data)
                 btn.BackgroundTransparency = hasAlpha and alpha or 0
             end)
         end
+    end, function()
+        local saved = Library.Flags[flag]
+        if typeof(saved) == "Color3" then
+            h, s, v = saved:ToHSV()
+            if hasAlpha then
+                local sa = tonumber(Library.Flags[flag .. "_alpha"])
+                if sa ~= nil then alpha = math.clamp(sa, 0, 1) end
+            end
+            paint()
+            pcall(function()
+                btn.BackgroundColor3 = current()
+                btn.BackgroundTransparency = hasAlpha and alpha or 0
+            end)
+        end
+        fire()
     end)
     function picker:SetOpen(o)
         o = o and true or false
