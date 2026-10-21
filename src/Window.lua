@@ -415,7 +415,7 @@ function Library:Window(data)
     end
 
     -- Soft drop shadow: a dark plate riding behind the window, synced to
-    -- every move/resize so the window floats above the game.
+    -- every move/resize/visibility change so the window floats above the game.
     local shadow = self:Create("Frame", {
         Name = "WindowShadow",
         BackgroundColor3 = Color3.new(0, 0, 0),
@@ -429,11 +429,13 @@ function Library:Window(data)
         pcall(function()
             shadow.Position = UDim2.new(root.Position.X.Scale, root.Position.X.Offset - 7, root.Position.Y.Scale, root.Position.Y.Offset + 5)
             shadow.Size = UDim2.new(root.Size.X.Scale, root.Size.X.Offset + 14, root.Size.Y.Scale, root.Size.Y.Offset + 14)
+            shadow.Visible = root.Visible
         end)
     end
     syncShadow()
     self:Connect(root:GetPropertyChangedSignal("Position"), syncShadow)
     self:Connect(root:GetPropertyChangedSignal("Size"), syncShadow)
+    self:Connect(root:GetPropertyChangedSignal("Visible"), syncShadow)
 
     -- Loading card.
     local overlay = self:Create("Frame", {
