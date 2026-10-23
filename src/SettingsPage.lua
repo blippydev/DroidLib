@@ -230,7 +230,7 @@ function Library:CreateSettingsPage(window)
         Name = "Preset",
         Flag = "__theme",
         Items = names,
-        Default = "Default",
+        Default = "DroidRed",
         Callback = function(v) self:ApplyThemePreset(v) end,
     })
     theme:AddButton({
@@ -246,7 +246,7 @@ function Library:CreateSettingsPage(window)
     theme:AddButton({
         Name = "Reset theme",
         Callback = function()
-            self:ApplyThemePreset("Default")
+            self:ApplyThemePreset("DroidRed")
             self:SetBackgroundImage(self.DefaultBackgroundImage, self.DefaultBackgroundTransparency)
         end,
     })

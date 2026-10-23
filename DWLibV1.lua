@@ -43,24 +43,21 @@ Library._windows = {}
 Library.Unloading = false
 Library.MenuKey = Enum.KeyCode.RightShift
 
--- Linoria-look palette: flat dark, thin outlines, blue accent, mono text.
--- Keys mirror Linoria's 5-color scheme (BackgroundColor/MainColor/
--- AccentColor/OutlineColor/FontColor) mapped onto DWLib's 12 keys.
--- Type is Gotham everywhere (mono Code survives only on chips/readouts);
--- corners are real (SquareCorners=false) with per-element radii.
+-- DroidRed is the default boot theme: near-black red-tinted chrome with a
+-- strong red accent (matches the DroidRed preset below).
 Library.Theme = {
-    Background = Color3.fromRGB(20, 20, 20),   -- 0x141414 window bg
-    Panel = Color3.fromRGB(10, 10, 10),        -- darker section cards
-    Element = Color3.fromRGB(28, 28, 28),      -- 0x1c1c1c MainColor (rows)
-    Element2 = Color3.fromRGB(28, 28, 28),     -- 0x1c1c1c controls
-    Surface = Color3.fromRGB(24, 24, 24),      -- 0x181818 chips
-    Inline = Color3.fromRGB(16, 16, 16),       -- 0x101010 inputs
-    Accent = Color3.fromRGB(0, 85, 255),       -- 0x0055ff AccentColor
-    AccentSoft = Color3.fromRGB(0, 56, 170),   -- darker accent (v / 1.5)
-    Text = Color3.fromRGB(255, 255, 255),      -- FontColor
-    TextMuted = Color3.fromRGB(200, 200, 200),
-    Outline = Color3.fromRGB(50, 50, 50),      -- 0x323232 OutlineColor
-    OutlineSoft = Color3.fromRGB(38, 38, 38),  -- 0x262626
+    Background = Color3.fromRGB(13, 13, 16),
+    Panel = Color3.fromRGB(20, 20, 25),
+    Element = Color3.fromRGB(24, 24, 30),
+    Element2 = Color3.fromRGB(30, 30, 38),
+    Surface = Color3.fromRGB(26, 26, 33),
+    Inline = Color3.fromRGB(18, 18, 23),
+    Accent = Color3.fromRGB(220, 30, 42),
+    AccentSoft = Color3.fromRGB(120, 30, 40),
+    Text = Color3.fromRGB(240, 240, 245),
+    TextMuted = Color3.fromRGB(150, 150, 160),
+    Outline = Color3.fromRGB(45, 45, 55),
+    OutlineSoft = Color3.fromRGB(32, 32, 40),
     WindowBorder = Color3.fromRGB(50, 50, 50), -- window frame edge
 }
 
@@ -5792,7 +5789,7 @@ function Library:CreateSettingsPage(window)
         Name = "Preset",
         Flag = "__theme",
         Items = names,
-        Default = "Default",
+        Default = "DroidRed",
         Callback = function(v) self:ApplyThemePreset(v) end,
     })
     theme:AddButton({
@@ -5808,7 +5805,7 @@ function Library:CreateSettingsPage(window)
     theme:AddButton({
         Name = "Reset theme",
         Callback = function()
-            self:ApplyThemePreset("Default")
+            self:ApplyThemePreset("DroidRed")
             self:SetBackgroundImage(self.DefaultBackgroundImage, self.DefaultBackgroundTransparency)
         end,
     })
@@ -6266,7 +6263,7 @@ end
 -- [ module: _BuildInfo (generated) ]
 -- ============================================================
 
-Library.BuildId = "c7695a1 2026-10-21 22:53 UTC"
+Library.BuildId = "3228dc4 2026-10-23 00:12 UTC"
 -- ============================================================
 -- [ module: Footer.lua ]
 -- ============================================================
